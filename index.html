@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Carregamento dos Dados</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <h1>Taxi</h1>
+        <select name="question-selector" id="question-select">
+            <option value="1" selected>Questão 1</option>
+            <option value="2">Questão 2</option>
+        </select>
+        <svg>
+        </svg>
+        <div class="buttom-container">
+            <div class="question-1-button-container">
+                <button id="distanceBtn">Distância</button>
+                <button id="pickupHourBtn">Hora da corrida</button>
+                <button id="totalAmountBtn">Valor da corrida</button>
+                <button id="AvgRaceDuration">Duração Média da Corrida</button>
+            </div>
+            <div class="question-2-button-container" >
+                <button id="sumBtn">Total</button>
+                <button id="avgBtn">Média</button>
+            </div>
+            <button id="clearBtn">Limpar</button>
+        </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+
+</html>
