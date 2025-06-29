@@ -1,4 +1,4 @@
-import { loadChartQuestion1, loadChartQuestion2, loadChartQuestion1PickupHour, clearChart, loadChartQuestion1TotalAmount, loadChartQuestion1AvgRaceDuration } from './plot';
+import { loadChartQuestion1, loadChartQuestion2, loadChartQuestion1PickupHour, clearChart, loadChartQuestion1TotalAmount, loadChartQuestion1AvgRaceDuration, loadChartMetacritic } from './plot';
 import { Games } from "./games";
 
 // function callbacksQuestion2(dataAvg, dataSum) {
@@ -198,8 +198,18 @@ window.onload = async () => {
     await games.init();
     await games.loadGames();
 
-    const gamesData = await games.test();
-    console.log(gamesData);
+    const criticQuery = `
+        SELECT "Name" as name, "Metacritic score" as metacritic_score, "Average playtime forever" as average_playtime_forever
+        FROM games
+        WHERE metacritic_score <> 0 
+            AND average_playtime_forever <> 0
+            order by average_playtime_forever desc
+        LIMIT 100
+    `;  
+
+    const gamesData = await games.query(criticQuery);
+
+    loadChartMetacritic(gamesData);
     
     // await buildChartQuestion1(taxi);
     // await buildChartQuestion2(taxi);

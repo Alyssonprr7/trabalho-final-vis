@@ -10,6 +10,12 @@ export async function loadChartQuestion1(data, margens = { left: 75, right: 50, 
     plotBarChart(treatedData, margens, { x: 'Dia', y: 'Média da distância (Milhas)' }, 'steelblue');
 }
 
+export async function loadChartMetacritic(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
+    const treatedData = data.map(d => ({ x: Number(d.metacritic_score), y: Number(d.average_playtime_forever), name: d.name }));
+    console.log(treatedData);
+    plotScatterPlot(treatedData, margens, {x: 'Avaliação', y: 'Tempo jogado (h)', name: "Nome"});
+}
+
 export async function loadChartQuestion1PickupHour(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
     const svg = d3.select('svg');
 
@@ -271,6 +277,100 @@ const plotBarChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 75
     d3.select('#group')
         .attr('transform', `translate(${margens.left}, ${margens.top})`);
 }
+
+
+const plotScatterPlot = (data, margens, labels, pointColor = "steelblue") => {
+    const svg = d3.select('svg');
+    if (!svg) return;
+
+    const svgWidth = +svg.style("width").split("px")[0] - margens.left - margens.right;
+    const svgHeight = +svg.style("height").split("px")[0] - margens.top - margens.bottom;
+
+    // ---- Escalas
+    const extentX = d3.extent(data, d => d.x);
+    const extentY = d3.extent(data, d => d.y);
+
+    const mapX = d3.scaleLinear()
+        .domain([extentX[0], extentX[1]])
+        .range([0, svgWidth]);
+
+    const mapY = d3.scaleLinear()
+        .domain([extentY[0], extentY[1]])
+        .range([svgHeight, 0]); // eixo invertido
+
+    // ---- Eixos
+    const xAxis = d3.axisBottom(mapX);
+    const yAxis = d3.axisLeft(mapY);
+
+    svg.selectAll('#axisX').data([0])
+        .join('g')
+        .attr('id', 'axisX')
+        .attr('class', 'x axis')
+        .attr('transform', `translate(${margens.left}, ${svgHeight + margens.top})`)
+        .call(xAxis)
+        .append("text")
+        .attr("x", svgWidth / 2)
+        .attr("y", 60)
+        .style("text-anchor", "middle")
+        .style("fill", "black")
+        .style("font-size", "1.5em")
+        .text(labels.x);
+
+    svg.selectAll('#axisY').data([0])
+        .join('g')
+        .attr('id', 'axisY')
+        .attr('class', 'y axis')
+        .attr('transform', `translate(${margens.left}, ${margens.top})`)
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -(svgHeight / 2))
+        .attr("y", -70)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("font-size", "1.5em")
+        .style("fill", "black")
+        .text(labels.y);
+
+    // ---- Círculos (scatter plot)
+    const group = svg.selectAll('#group').data([0])
+        .join('g')
+        .attr('id', 'group')
+        .attr('transform', `translate(${margens.left}, ${margens.top})`);
+
+    const points = group.selectAll('circle').data(data);
+
+const tooltip = d3.select("#tooltip");
+
+points.enter()
+    .append('circle')
+    .attr('cx', d => mapX(d.x))
+    .attr('cy', d => mapY(d.y))
+    .attr('r', 5)
+    .attr('fill', pointColor)
+    .on('mouseover', function (event, d) {
+        tooltip.style('display', 'block')
+               .html(`${labels.name}: ${d.name}<br>${labels.x}: ${d.x}<br>${labels.y}: ${d.y}`);
+        d3.select(this).attr('r', 8); // aumenta o ponto no hover
+    })
+    .on('mousemove', function (event) {
+        tooltip
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 28) + 'px');
+    })
+    .on('mouseout', function () {
+        tooltip.style('display', 'none');
+        d3.select(this).attr('r', 5);
+    });
+
+    points
+        .attr('cx', d => mapX(d.x))
+        .attr('cy', d => mapY(d.y))
+        .attr('r', 5)
+        .attr('fill', pointColor);
+
+    points.exit().remove();
+};
 
 export function clearChart() {
     d3.select('#group')
