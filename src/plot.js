@@ -1,194 +1,30 @@
 import * as d3 from 'd3';
 
-export async function loadChartQuestion2(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
-    const treatedData = data.map(d => ({ x: d.hour, y: d.tip_amount }));
-    plotBarChart(treatedData, margens, { x: 'Hora do dia', y: 'Gorjeta ($)' }, 'steelblue');
-}
+// export async function loadChartQuestion2(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
+//     const treatedData = data.map(d => ({ x: d.hour, y: d.tip_amount }));
+//     plotBarChart(treatedData, margens, { x: 'Hora do dia', y: 'Gorjeta ($)' }, 'steelblue');
+// }
 
-export async function loadChartQuestion1(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
-    const treatedData = data.map(d => ({ x: d.day_type, y: d.trip_distance }));
-    plotBarChart(treatedData, margens, { x: 'Dia', y: 'Média da distância (Milhas)' }, 'steelblue');
-}
+// export async function loadChartQuestion1(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
+//     const treatedData = data.map(d => ({ x: d.day_type, y: d.trip_distance }));
+//     plotBarChart(treatedData, margens, { x: 'Dia', y: 'Média da distância (Milhas)' }, 'steelblue');
+// }
 
 export async function loadChartMetacritic(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
     const treatedData = data.map(d => ({ x: Number(d.metacritic_score), y: Number(d.average_playtime_forever), name: d.name }));
-    console.log(treatedData);
     plotScatterPlot(treatedData, margens, {x: 'Avaliação', y: 'Tempo jogado (h)', name: "Nome"});
 }
 
-export async function loadChartQuestion1PickupHour(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
-    const svg = d3.select('svg');
-
-    if (!svg) {
-        return;
-    }
-
-    const svgWidth = +svg.style("width").split("px")[0] - margens.left - margens.right
-    const svgHeight = +svg.style("height").split("px")[0] - margens.top - margens.bottom;
-
-    const series = d3.groups(data, d => d.day_type);
-
-    const xExtent = d3.extent(data, d => d.hour);
-    const yMax = d3.max(data, d => d.quantity);
-
-    const mapX = d3.scaleLinear()
-    .domain(xExtent)
-    .range([0, svgWidth]);
-
-    const mapY = d3.scaleLinear()
-    .domain([0, yMax])
-    .range([svgHeight, 0]);
-
-    const xAxis = d3.axisBottom(mapX);
-    const groupX = svg.selectAll('#axisX').data([0]);
-    groupX.join('g')
-        .attr('id', 'axisX')
-        .attr('class', 'x axis')
-        .attr('transform', `translate(${margens.left}, ${+svg.style('height').split('px')[0] - margens.bottom})`)
-        .call(xAxis)
-        .append("text") // Label
-        .attr("x", svgWidth / 2)
-        .attr("y", 60)
-        .style("text-anchor", "middle")
-        .style("fill", "black")
-        .style("font-size", "1.5em")
-        .text("Hora");
-
-    const yAxis = d3.axisLeft(mapY);
-    const groupY = svg.selectAll('#axisY').data([0]);
-    groupY.join('g')
-        .attr('id', 'axisY')
-        .attr('class', 'y axis')
-        .attr('transform', `translate(${margens.left}, ${margens.top})`)
-        .call(yAxis)        
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -(svgHeight / 2))
-        .attr("y", -70)
-        .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .style("font-size", "1.5em")
-        .style("fill", "black")
-        .text("Quantidade de corridas");
-
-    const line = d3.line()
-        .x(d => mapX(d.hour))
-        .y(d => mapY(d.quantity));
-
-    const selection = svg.selectAll('#group2').data([0]);
-    const cGroup = selection.join('g')
-            .attr('id', 'group2');
-
-    cGroup.selectAll('.line')
-        .data(series)
-        .join('path')
-        .attr('class', 'line')
-        .attr('fill', 'none')
-        .attr('transform', `translate(${margens.left}, ${margens.top})`)
-        .attr('stroke', (d, i) => d3.schemeCategory10[i]) // cores diferentes por tipo
-        .attr('stroke-width', 2)
-        .attr('d', d => line(d[1]));
-   
-    // labels
-    cGroup.selectAll('.label')
-    .data(series)
-    .join('text')
-    .attr('class', 'label')
-    .attr('x', d => mapX(d[1].at(-1).hour + 1.6))
-    .attr('y', d => mapY(d[1].at(-1).quantity - 3500))
-    .attr('dy', '0.35em')
-    .style('fill', (d, i) => d3.schemeCategory10[i])
-    .style('font-size', '0.9em')
-    .text(d => d[0]);
-};
-
-export async function loadChartQuestion1TotalAmount(data, margens = { left: 75, right: 50, top: 50, bottom: 75}) {
-    const treatedData = data.map(d => ({x: d.day_type, y: d.avg_fare}));
-    plotBarChart(treatedData, margens, {x: 'Dia', y: 'Média do valor total ($)'}, 'green')
+export async function loadChartBubble(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
+    const treatedData = data.map(d => ({ x: treatOwners(d.estimated_owners)/10000, y: Number(d.price), r: Number(d.average_playtime_forever), name: d.name }));
+    console.log(treatedData);
+    plotBubbleChart(treatedData, margens, {x: 'Quantidade de vendas (em milhares)', y: 'Média do preço ($)', r: "Tempo jogado (h)"});
 }
 
-export async function loadChartQuestion1AvgRaceDuration(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
-    const svg = d3.select('svg');
-
-    if (!svg) {
-        return;
-    }
-
-    const svgWidth = +svg.style("width").split("px")[0] - margens.left - margens.right;
-    const svgHeight = +svg.style("height").split("px")[0] - margens.top - margens.bottom;
-
-    const xExtent = data.map(d => d.day_name);
-    const yMax = d3.max(data, d => d.trip_duration);
-
-    const mapX = d3.scalePoint()
-        .domain(xExtent)
-        .range([0, svgWidth]);
-
-    const mapY = d3.scaleLinear()
-        .domain([0, yMax])
-        .range([svgHeight, 0]);
-
-    // Eixo X
-    const xAxis = d3.axisBottom(mapX);
-    const groupX = svg.selectAll('#axisX').data([0]);
-    groupX.join('g')
-        .attr('id', 'axisX')
-        .attr('class', 'x axis')
-        .attr('transform', `translate(${margens.left}, ${+svg.style('height').split('px')[0] - margens.bottom})`)
-        .call(xAxis)
-        .append("text")
-        .attr("x", svgWidth / 2)
-        .attr("y", 60)
-        .style("text-anchor", "middle")
-        .style("fill", "black")
-        .style("font-size", "1.5em")
-        .text("Dias da Semana");
-
-
-    const yAxis = d3.axisLeft(mapY)
-        .tickFormat(d => `${d} Min`);
-    const groupY = svg.selectAll('#axisY').data([0]);
-    groupY.join('g')
-        .attr('id', 'axisY')
-        .attr('class', 'y axis')
-        .attr('transform', `translate(${margens.left}, ${margens.top})`)
-        .call(yAxis)
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -(svgHeight / 2))
-        .attr("y", -70)
-        .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .style("font-size", "1.5em")
-        .style("fill", "black")
-        .text("Duração média em minutos");
-
-    const selection = svg.selectAll('#group2').data([0]);
-    const cGroup = selection.join('g').attr('id', 'group2');
-
-    const line = d3.line()
-        .x(d => mapX(d.day_name))
-        .y(d => mapY(d.trip_duration));
-
-    cGroup.append('path')
-        .datum(data)
-        .attr('class', 'line')
-        .attr('fill', 'none')
-        .attr('stroke', 'steelblue')
-        .attr('stroke-width', 2)
-        .attr('d', line)
-        .attr('transform', `translate(${margens.left}, ${margens.top})`);
-
-    // Adicionar pontos na linha
-    cGroup.selectAll('.point')
-        .data(data)
-        .join('circle')
-        .attr('class', 'point')
-        .attr('cx', d => mapX(d.day_name))
-        .attr('cy', d => mapY(d.trip_duration))
-        .attr('r', 4)
-        .attr('fill', 'steelblue')
-        .attr('transform', `translate(${margens.left}, ${margens.top})`);
+const treatOwners = (owners) => {
+    const inferior = owners.split('-')[0];
+    const superior = owners.split('-')[1];
+    return (Number(superior) - Number(inferior))/2;
 }
 
 
@@ -371,6 +207,113 @@ points.enter()
 
     points.exit().remove();
 };
+
+
+const plotBubbleChart = (
+  data,
+  margins = { left: 75, right: 50, top: 50, bottom: 75 },
+  labels = { x: 'Eixo X', y: 'Eixo Y' },
+  colors = { fill: 'steelblue', stroke: 'black' }
+) => {
+  const svg = d3.select('svg');
+  if (!svg.node()) return;
+
+  const svgWidth = +svg.style("width").replace("px", "") - margins.left - margins.right;
+  const svgHeight = +svg.style("height").replace("px", "") - margins.top - margins.bottom;
+
+  // Escalas
+  const xExtent = d3.extent(data, d => d.x);
+  const yExtent = d3.extent(data, d => d.y);
+  const rExtent = d3.extent(data, d => d.r);
+
+  const scaleX = d3.scaleLinear().domain(xExtent).range([0, svgWidth]).nice();
+  const scaleY = d3.scaleLinear().domain(yExtent).range([svgHeight, 0]).nice();
+  const scaleR = d3.scaleSqrt().domain(rExtent).range([4, 40]);
+
+  // Eixos
+  svg.selectAll('#axisX').data([0]).join('g')
+    .attr('id', 'axisX')
+    .attr('transform', `translate(${margins.left}, ${svgHeight + margins.top})`)
+    .call(d3.axisBottom(scaleX))
+    .append('text')
+    .attr('x', svgWidth / 2)
+    .attr('y', 50)
+    .attr('fill', 'black')
+    .style('text-anchor', 'middle')
+    .style('font-size', '1.2em')
+    .text(labels.x);
+
+  svg.selectAll('#axisY').data([0]).join('g')
+    .attr('id', 'axisY')
+    .attr('transform', `translate(${margins.left}, ${margins.top})`)
+    .call(d3.axisLeft(scaleY))
+    .append('text')
+    .attr('transform', 'rotate(-90)')
+    .attr('x', -svgHeight / 2)
+    .attr('y', -50)
+    .attr('fill', 'black')
+    .style('text-anchor', 'middle')
+    .style('font-size', '1.2em')
+    .text(labels.y);
+
+  // Tooltip
+  const tooltip = d3.select('#tooltip');
+  if (tooltip.empty()) {
+    d3.select('body').append('div')
+      .attr('id', 'tooltip')
+      .style('position', 'absolute')
+      .style('padding', '8px')
+      .style('background', 'rgba(0,0,0,0.75)')
+      .style('color', 'white')
+      .style('border-radius', '4px')
+      .style('font-size', '0.85em')
+      .style('pointer-events', 'none')
+      .style('display', 'none');
+  }
+
+  // Grupo de círculos
+  const group = svg.selectAll('#group').data([0])
+    .join('g')
+    .attr('id', 'group')
+    .attr('transform', `translate(${margins.left}, ${margins.top})`);
+
+  const bubbles = group.selectAll('circle').data(data);
+
+  bubbles.enter()
+    .append('circle')
+    .attr('cx', d => scaleX(d.x))
+    .attr('cy', d => scaleY(d.y))
+    .attr('r', d => scaleR(d.r))
+    .attr('fill', colors.fill)
+    .attr('opacity', 0.7)
+    .on('mouseover', function (event, d) {
+      d3.select(this).attr('stroke', colors.stroke).attr('stroke-width', 1.5);
+      d3.select('#tooltip')
+        .style('display', 'block')
+        .html(`
+          ${labels.x}: ${d.x.toFixed(2)}<br>
+          ${labels.y}: ${d.y.toFixed(2)}<br>
+          ${labels.r}: ${d.r.toFixed(2)}
+        `);
+    })
+    .on('mousemove', function (event) {
+      d3.select('#tooltip')
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY - 28) + 'px');
+    })
+    .on('mouseout', function () {
+      d3.select(this).attr('stroke', null);
+      d3.select('#tooltip').style('display', 'none');
+    });
+
+  bubbles
+    .attr('cx', d => scaleX(d.x))
+    .attr('cy', d => scaleY(d.y))
+    .attr('r', d => scaleR(d.r));
+
+  bubbles.exit().remove();
+};
+
 
 export function clearChart() {
     d3.select('#group')

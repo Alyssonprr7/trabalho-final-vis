@@ -1,4 +1,4 @@
-import { loadChartQuestion1, loadChartQuestion2, loadChartQuestion1PickupHour, clearChart, loadChartQuestion1TotalAmount, loadChartQuestion1AvgRaceDuration, loadChartMetacritic } from './plot';
+import { loadChartMetacritic, loadChartBubble } from './plot';
 import { Games } from "./games";
 
 // function callbacksQuestion2(dataAvg, dataSum) {
@@ -209,7 +209,35 @@ window.onload = async () => {
 
     const gamesData = await games.query(criticQuery);
 
-    loadChartMetacritic(gamesData);
+    // loadChartMetacritic(gamesData);
+
+
+
+    const genreAndCriticQuery = `
+        SELECT 
+    trim(genre) as genero,
+    COUNT(*) as quantidade,
+    avg("Metacritic score") as metacritic_score,
+    avg("Average playtime forever") as average_playtime_forever
+FROM (
+    SELECT unnest(string_split("Genres", ',')) as genre,
+    "Metacritic score",
+    "Average playtime forever"
+    FROM games
+)
+GROUP BY trim(genre)
+    `;  
+
+
+    const priceAndBubbleQuery = `
+        SELECT "Estimated owners" as estimated_owners, avg("Price") as price, avg("Average playtime forever") as average_playtime_forever 
+        from games 
+        group by estimated_owners 
+    `;  
+
+    const gamesData2 = await games.query(priceAndBubbleQuery);
+    console.log(gamesData2);
+    loadChartBubble(gamesData2);
     
     // await buildChartQuestion1(taxi);
     // await buildChartQuestion2(taxi);
