@@ -1,4 +1,4 @@
-import { loadChartMetacritic, loadChartBubble } from './plot';
+import { loadChartMetacritic, loadChartBubble, loadChartBar } from './plot';
 import { Games } from "./games";
 
 // function callbacksQuestion2(dataAvg, dataSum) {
@@ -215,17 +215,43 @@ window.onload = async () => {
 
     const genreAndCriticQuery = `
         SELECT 
-    trim(genre) as genero,
-    COUNT(*) as quantidade,
+    trim(genre) as genre,
+    COUNT(*) as quantity,
     avg("Metacritic score") as metacritic_score,
-    avg("Average playtime forever") as average_playtime_forever
+    avg("Average playtime forever") as average_playtime_forever,
+    AVG((
+  CAST(split_part(replace("Estimated owners", ',', ''), ' - ', 1) AS DOUBLE) +
+  CAST(split_part(replace("Estimated owners", ',', ''), ' - ', 2) AS DOUBLE)
+) / 2) AS avg_estimated_owners,
+    avg("Peak CCU") as peak_ccu
 FROM (
     SELECT unnest(string_split("Genres", ',')) as genre,
     "Metacritic score",
-    "Average playtime forever"
+    "Average playtime forever",
+    "Estimated owners",
+    "Peak CCU"
+
     FROM games
 )
-GROUP BY trim(genre)
+GROUP BY trim(genre),
+order by avg_estimated_owners desc
+limit 10
+    `;  
+
+        const genreAndCriticQueryByGenre = `
+        SELECT 
+    name as genre,
+    "Metacritic score" as metacritic_score,
+    "Average playtime forever" as average_playtime_forever,
+    (
+  CAST(split_part(replace("Estimated owners", ',', ''), ' - ', 1) AS DOUBLE) +
+  CAST(split_part(replace("Estimated owners", ',', ''), ' - ', 2) AS DOUBLE)
+) / 2 AS avg_estimated_owners,
+    "Peak CCU" as peak_ccu
+FROM games
+where genre like '%Action%'
+order by avg_estimated_owners desc
+limit 10
     `;  
 
 
@@ -235,9 +261,9 @@ GROUP BY trim(genre)
         group by estimated_owners 
     `;  
 
-    const gamesData2 = await games.query(priceAndBubbleQuery);
+    const gamesData2 = await games.query(genreAndCriticQuery); 
     console.log(gamesData2);
-    loadChartBubble(gamesData2);
+    loadChartBar(gamesData2);
     
     // await buildChartQuestion1(taxi);
     // await buildChartQuestion2(taxi);

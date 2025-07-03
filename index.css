@@ -1,15 +1,15 @@
 body {
     margin: 20px;
+    background-color: #efefef;
 
     font-family: 'Times New Roman', Times, serif;
     font-size: 1.25em;
   }
 
 .main-container {
-    height: 500px;
+    height: 600px;
 
     display: flex;
-    background-color: #efefef;
 
     flex-direction: column;
     flex-wrap: nowrap;
@@ -33,8 +33,8 @@ svg {
     border-radius: 8px;
     border: #bfbfbf solid 1px;
 
-    height: 400px;
-    width: 800px;
+    height: 1000px;
+    width: 1000px;
 }
 
 circle {

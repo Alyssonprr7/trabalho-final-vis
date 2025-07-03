@@ -1,14 +1,9 @@
 import * as d3 from 'd3';
 
-// export async function loadChartQuestion2(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
-//     const treatedData = data.map(d => ({ x: d.hour, y: d.tip_amount }));
-//     plotBarChart(treatedData, margens, { x: 'Hora do dia', y: 'Gorjeta ($)' }, 'steelblue');
-// }
-
-// export async function loadChartQuestion1(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
-//     const treatedData = data.map(d => ({ x: d.day_type, y: d.trip_distance }));
-//     plotBarChart(treatedData, margens, { x: 'Dia', y: 'Média da distância (Milhas)' }, 'steelblue');
-// }
+export async function loadChartBar(data, margens = { left: 90, right: 90, top: 50, bottom: 150 }) {
+    const treatedData = data.map(d => ({ x: d.genre, yBar: Number(d.avg_estimated_owners), yLine: Number(d.peak_ccu) }));
+    plotBarChartWithLine(treatedData, margens, { x: 'Gênero', yLeft: 'Quantidade de vendas (em milhares)', yRight: "Pico de usuários simultâneos" }, 'steelblue');
+}
 
 export async function loadChartMetacritic(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
     const treatedData = data.map(d => ({ x: Number(d.metacritic_score), y: Number(d.average_playtime_forever), name: d.name }));
@@ -113,6 +108,127 @@ const plotBarChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 75
     d3.select('#group')
         .attr('transform', `translate(${margens.left}, ${margens.top})`);
 }
+
+
+const plotBarChartWithLine = (
+  data,                 // array de objetos: { x, yBar, yLine }
+  margens = { left: 75, right: 75, top: 50, bottom: 75 },
+  labels = { x: 'Eixo X', yLeft: 'Valor de barras', yRight: 'Valor de linha' },
+  barColor = 'steelblue',
+  lineColor = 'orange'
+) => {
+  const svg = d3.select('svg');
+  if (!svg.node()) return;
+
+  const svgWidth = +svg.style("width").replace("px", "") - margens.left - margens.right;
+  const svgHeight = +svg.style("height").replace("px", "") - margens.top - margens.bottom;
+
+  const mapX = d3.scaleBand()
+    .domain(data.map(d => d.x))
+    .range([0, svgWidth])
+    .padding(0.1);
+
+  const maxYBar = d3.max(data, d => d.yBar);
+  const maxYLine = d3.max(data, d => d.yLine);
+
+  const scaleYBar = d3.scaleLinear()
+    .domain([0, maxYBar])
+    .range([svgHeight, 0]);
+
+  const scaleYLine = d3.scaleLinear()
+    .domain([0, maxYLine])
+    .range([svgHeight, 0]);
+
+  // Eixo X
+  svg.selectAll('#axisX').data([0])
+    .join('g')
+    .attr('id', 'axisX')
+    .attr('transform', `translate(${margens.left}, ${svgHeight + margens.top})`)
+    .call(d3.axisBottom(mapX))
+    .append("text")
+    .attr("x", svgWidth / 2)
+    .attr("y", 50)
+    .style("text-anchor", "middle")
+    .style("font-size", "1.2em")
+    .text(labels.x);
+
+    svg.select('#axisX')
+  .selectAll("text")
+  .attr("transform", "rotate(-45)")
+  .style("text-anchor", "end")
+  .attr("dx", "-0.8em")
+  .attr("dy", "0.15em")
+
+  // Eixo Y da esquerda (barras)
+svg.selectAll('#axisYLeft').data([0])
+  .join('g')
+  .attr('id', 'axisYLeft')
+  .attr('transform', `translate(${margens.left}, ${margens.top})`)
+  .call(d3.axisLeft(scaleYBar))
+  .append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("x", -svgHeight / 2)
+  .attr("y", -70)
+  .attr("dy", "1em")
+  .style("text-anchor", "middle")
+  .style("font-size", "1.2em")
+  .style("fill", "black")
+  .text(labels.yLeft || 'Eixo Y (esquerda)');
+
+// Eixo Y da direita (linha)
+svg.selectAll('#axisYRight').data([0])
+  .join('g')
+  .attr('id', 'axisYRight')
+  .attr('transform', `translate(${svgWidth + margens.left}, ${margens.top})`)
+  .call(d3.axisRight(scaleYLine))
+  .append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("x", -svgHeight / 2)
+  .attr("y", 50) // afasta do eixo
+  .attr("dy", "1em")
+  .style("text-anchor", "middle")
+  .style("font-size", "1.2em")
+  .style("fill", "black")
+  .text(labels.yRight || 'Eixo Y (direita)');
+
+  // Grupo geral
+  const group = svg.selectAll('#groupCombined').data([0])
+    .join('g')
+    .attr('id', 'groupCombined')
+    .attr('transform', `translate(${margens.left}, ${margens.top})`);
+
+  // Barras
+  const bars = group.selectAll('rect').data(data);
+
+  bars.enter()
+    .append('rect')
+    .merge(bars)
+    .attr('x', d => mapX(d.x))
+    .attr('y', d => scaleYBar(d.yBar))
+    .attr('width', mapX.bandwidth())
+    .attr('height', d => svgHeight - scaleYBar(d.yBar))
+    .attr('fill', barColor);
+
+  bars.exit().remove();
+
+  // Linha
+  const line = d3.line()
+    .x(d => mapX(d.x) + mapX.bandwidth() / 2)
+    .y(d => scaleYLine(d.yLine));
+
+  const path = group.selectAll('.line-path').data([data]);
+
+  path.enter()
+    .append('path')
+    .attr('class', 'line-path')
+    .merge(path)
+    .attr('fill', 'none')
+    .attr('stroke', lineColor)
+    .attr('stroke-width', 2)
+    .attr('d', line);
+
+  path.exit().remove();
+};
 
 
 const plotScatterPlot = (data, margens, labels, pointColor = "steelblue") => {
