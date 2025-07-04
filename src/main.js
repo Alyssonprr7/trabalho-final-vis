@@ -1,29 +1,32 @@
-import { loadChartMetacritic, loadChartBubble, loadChartBar } from './plot';
+import { loadChartMetacritic, loadChartBubble, loadChartBar, clearChart } from './plot';
 import { Games } from "./games";
 
-// function callbacksQuestion2(dataAvg, dataSum) {
-//     const avgBtn  = document.querySelector('#avgBtn');
-//     const sumBtn  = document.querySelector('#sumBtn');
-//     const clearBtn = document.querySelector('#clearBtn');
+async function callbacksByGenre(games, genre) {
+    clearChart();
+    console.log(genre);
 
-//     if (!avgBtn || !sumBtn || !clearBtn) {
-//         return;
-//     }
+    const genreAndCriticQueryByGenre = `
+        SELECT 
+            "Name" as name,
+            "Metacritic score" as metacritic_score,
+            "Average playtime forever" as average_playtime_forever,
+            (
+        CAST(split_part(replace("Estimated owners", ',', ''), ' - ', 1) AS DOUBLE) +
+        CAST(split_part(replace("Estimated owners", ',', ''), ' - ', 2) AS DOUBLE)
+        ) / 2 AS avg_estimated_owners,
+            "Peak CCU" as peak_ccu
+        FROM games
+        where "Genres" like '%${genre}%'
+        order by avg_estimated_owners desc
+        limit 10
+    `;  
 
-//     avgBtn.addEventListener('click', async () => {
-//         clearChart();
-//         await loadChartQuestion2(dataAvg);
-//     });
 
-//     sumBtn.addEventListener('click', async () => {
-//         clearChart();
-//         await loadChartQuestion2(dataSum);
-//     });
+    const gamesData2 = await games.query(genreAndCriticQueryByGenre); 
+    console.log(gamesData2);
+    loadChartBar(gamesData2);
 
-//     clearBtn.addEventListener('click', async () => {
-//         clearChart();
-//     });
-// }
+}
 
 // const buildChartQuestion2 = async (taxi) => {
 //     let sql = `
@@ -263,7 +266,7 @@ limit 10
 
     const gamesData2 = await games.query(genreAndCriticQuery); 
     console.log(gamesData2);
-    loadChartBar(gamesData2);
+    loadChartBar(gamesData2, (genre) => callbacksByGenre(games, genre));
     
     // await buildChartQuestion1(taxi);
     // await buildChartQuestion2(taxi);

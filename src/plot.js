@@ -1,8 +1,14 @@
 import * as d3 from 'd3';
 
-export async function loadChartBar(data, margens = { left: 90, right: 90, top: 50, bottom: 150 }) {
-    const treatedData = data.map(d => ({ x: d.genre, yBar: Number(d.avg_estimated_owners), yLine: Number(d.peak_ccu) }));
-    plotBarChartWithLine(treatedData, margens, { x: 'Gênero', yLeft: 'Quantidade de vendas (em milhares)', yRight: "Pico de usuários simultâneos" }, 'steelblue');
+export async function loadChartBar(data, callBack) {
+    //Se tem callback é o caso de ser agrupado por genero
+    if(callBack) {
+      const treatedData = data.map(d => ({ x: d.genre, yBar: Number(d.avg_estimated_owners), yLine: Number(d.peak_ccu) }));
+      plotBarChartWithLine(treatedData, { left: 90, right: 90, top: 50, bottom: 150 }, { x: 'Gênero', yLeft: 'Quantidade de vendas (em milhares)', yRight: "Pico de usuários simultâneos" }, 'steelblue',"orange", callBack);
+    } else {
+      const treatedData = data.map(d => ({ x: d.name, yBar: Number(d.avg_estimated_owners), yLine: Number(d.peak_ccu) }));
+      plotBarChartWithLine(treatedData, { left: 90, right: 90, top: 50, bottom: 150 }, { x: 'Nome', yLeft: 'Quantidade de vendas (em milhares)', yRight: "Pico de usuários simultâneos" }, 'teal', 'mediumpurple', callBack);
+    }
 }
 
 export async function loadChartMetacritic(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
@@ -111,11 +117,13 @@ const plotBarChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 75
 
 
 const plotBarChartWithLine = (
-  data,                 // array de objetos: { x, yBar, yLine }
+  data,
   margens = { left: 75, right: 75, top: 50, bottom: 75 },
   labels = { x: 'Eixo X', yLeft: 'Valor de barras', yRight: 'Valor de linha' },
   barColor = 'steelblue',
-  lineColor = 'orange'
+  lineColor = 'orange',
+  onClickBar
+
 ) => {
   const svg = d3.select('svg');
   if (!svg.node()) return;
@@ -149,15 +157,15 @@ const plotBarChartWithLine = (
     .attr("x", svgWidth / 2)
     .attr("y", 50)
     .style("text-anchor", "middle")
-    .style("font-size", "1.2em")
     .text(labels.x);
 
     svg.select('#axisX')
-  .selectAll("text")
-  .attr("transform", "rotate(-45)")
-  .style("text-anchor", "end")
-  .attr("dx", "-0.8em")
-  .attr("dy", "0.15em")
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .style("text-anchor", "end")
+    .style("font-size", "1.4em")
+    .attr("dx", "-0.8em")
+    .attr("dy", "0.15em")
 
   // Eixo Y da esquerda (barras)
 svg.selectAll('#axisYLeft').data([0])
@@ -168,10 +176,10 @@ svg.selectAll('#axisYLeft').data([0])
   .append("text")
   .attr("transform", "rotate(-90)")
   .attr("x", -svgHeight / 2)
-  .attr("y", -70)
+  .attr("y", -75)
   .attr("dy", "1em")
   .style("text-anchor", "middle")
-  .style("font-size", "1.2em")
+  .style("font-size", "1.4em")
   .style("fill", "black")
   .text(labels.yLeft || 'Eixo Y (esquerda)');
 
@@ -187,7 +195,7 @@ svg.selectAll('#axisYRight').data([0])
   .attr("y", 50) // afasta do eixo
   .attr("dy", "1em")
   .style("text-anchor", "middle")
-  .style("font-size", "1.2em")
+  .style("font-size", "1.4em")
   .style("fill", "black")
   .text(labels.yRight || 'Eixo Y (direita)');
 
@@ -207,7 +215,12 @@ svg.selectAll('#axisYRight').data([0])
     .attr('y', d => scaleYBar(d.yBar))
     .attr('width', mapX.bandwidth())
     .attr('height', d => svgHeight - scaleYBar(d.yBar))
-    .attr('fill', barColor);
+    .attr('fill', barColor)
+    .on('click', (event, d) => {
+      if (typeof onClickBar === 'function') {
+        onClickBar(d.x);
+      }
+    });
 
   bars.exit().remove();
 
