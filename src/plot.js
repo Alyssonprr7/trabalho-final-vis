@@ -4,22 +4,22 @@ export async function loadChartBar(data, callBack) {
     //Se tem callback é o caso de ser agrupado por genero
     if(callBack) {
       const treatedData = data.map(d => ({ x: d.genre, yBar: Number(d.avg_estimated_owners), yLine: Number(d.peak_ccu) }));
-      plotBarChartWithLine(treatedData, { left: 90, right: 90, top: 50, bottom: 150 }, { x: 'Gênero', yLeft: 'Quantidade de vendas (em milhares)', yRight: "Pico de usuários simultâneos" }, 'steelblue',"orange", callBack);
+      plotBarChartWithLine(treatedData, { left: 90, right: 90, top: 50, bottom: 150 }, { x: 'Gênero', yLeft: 'Média da quantidade de vendas', yRight: "Pico de usuários simultâneos" }, 'steelblue',"orange", callBack);
     } else {
       const treatedData = data.map(d => ({ x: d.name, yBar: Number(d.avg_estimated_owners), yLine: Number(d.peak_ccu) }));
-      plotBarChartWithLine(treatedData, { left: 90, right: 90, top: 50, bottom: 150 }, { x: 'Nome', yLeft: 'Quantidade de vendas (em milhares)', yRight: "Pico de usuários simultâneos" }, 'teal', 'mediumpurple', callBack);
+      plotBarChartWithLine(treatedData, { left: 90, right: 90, top: 50, bottom: 150 }, { x: 'Nome', yLeft: 'Média da quantidade de vendas', yRight: "Pico de usuários simultâneos" }, 'teal', 'mediumpurple', callBack);
     }
 }
 
-export async function loadChartMetacritic(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
+export async function loadChartScatter(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
     const treatedData = data.map(d => ({ x: Number(d.metacritic_score), y: Number(d.average_playtime_forever), name: d.name }));
     plotScatterPlot(treatedData, margens, {x: 'Avaliação', y: 'Tempo jogado (h)', name: "Nome"});
 }
 
 export async function loadChartBubble(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
-    const treatedData = data.map(d => ({ x: treatOwners(d.estimated_owners)/10000, y: Number(d.price), r: Number(d.average_playtime_forever), name: d.name }));
+    const treatedData = data.map(d => ({ x: treatOwners(d.estimated_owners), y: Number(d.price), r: Number(d.average_playtime_forever), name: d.name }));
     console.log(treatedData);
-    plotBubbleChart(treatedData, margens, {x: 'Quantidade de vendas (em milhares)', y: 'Média do preço ($)', r: "Tempo jogado (h)"});
+    plotBubbleChart(treatedData, margens, {x: 'Quantidade de vendas', y: 'Média do preço ($)', r: "Tempo jogado (h)"});
 }
 
 const treatOwners = (owners) => {
@@ -216,10 +216,30 @@ svg.selectAll('#axisYRight').data([0])
     .attr('width', mapX.bandwidth())
     .attr('height', d => svgHeight - scaleYBar(d.yBar))
     .attr('fill', barColor)
+    .attr('cursor', 'pointer')
     .on('click', (event, d) => {
       if (typeof onClickBar === 'function') {
         onClickBar(d.x);
       }
+    })
+      .on('mouseover', function (event, d) {
+      d3.select(this).attr('stroke', barColor).attr('stroke-width', 1.5);
+      d3.select('#tooltip')
+        .style('display', 'block')
+        .html(`
+          ${labels.x}: ${d.x}<br>
+          ${labels.yLeft}: ${d.yBar.toFixed(2)}<br>
+          ${labels.yRight}: ${d.yLine.toFixed(2)}<br>
+        `);
+    })
+    .on('mousemove', function (event) {
+      d3.select('#tooltip')
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY - 28) + 'px');
+    })
+    .on('mouseout', function () {
+      d3.select(this).attr('stroke', null);
+      d3.select('#tooltip').style('display', 'none');
     });
 
   bars.exit().remove();
@@ -298,9 +318,9 @@ const plotScatterPlot = (data, margens, labels, pointColor = "steelblue") => {
         .text(labels.y);
 
     // ---- Círculos (scatter plot)
-    const group = svg.selectAll('#group').data([0])
+    const group = svg.selectAll('#groupScatter').data([0])
         .join('g')
-        .attr('id', 'group')
+        .attr('id', 'groupScatter')
         .attr('transform', `translate(${margens.left}, ${margens.top})`);
 
     const points = group.selectAll('circle').data(data);
@@ -401,9 +421,9 @@ const plotBubbleChart = (
   }
 
   // Grupo de círculos
-  const group = svg.selectAll('#group').data([0])
+  const group = svg.selectAll('#groupBubble').data([0])
     .join('g')
-    .attr('id', 'group')
+    .attr('id', 'groupBubble')
     .attr('transform', `translate(${margins.left}, ${margins.top})`);
 
   const bubbles = group.selectAll('circle').data(data);
@@ -449,14 +469,33 @@ export function clearChart() {
         .selectAll('rect')
         .remove();
 
-    d3.select('#group2')
+    d3.select('#groupCombined')
         .selectAll('.line')
         .remove();
 
-    d3.select('#group2')
+    d3.select('#groupCombined')
         .selectAll('text')
         .remove();
 
+    d3.select('#groupCombined')
+        .selectAll('*')
+        .remove();
+    d3.select('#groupBubble')
+    .selectAll('.line')
+    .remove();
+
+    d3.select('#groupBubble')
+        .selectAll('text')
+        .remove();
+
+    d3.select('#groupBubble')
+        .selectAll('*')
+        .remove();
+        
+    d3.select('#groupScatter')
+      .selectAll('*')
+      .remove();
+        
     d3.select('#axisX')
         .selectAll('*')
         .remove();
@@ -465,7 +504,11 @@ export function clearChart() {
         .selectAll('*')
         .remove();
 
-    d3.select('#group2')
+    d3.select('#axisYRight')
+        .selectAll('*')
+        .remove();
+
+    d3.select('#axisYLeft')
         .selectAll('*')
         .remove();
     }

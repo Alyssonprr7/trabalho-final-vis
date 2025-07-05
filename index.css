@@ -1,10 +1,20 @@
-body {
+/* body {
     margin: 20px;
     background-color: #efefef;
 
     font-family: 'Times New Roman', Times, serif;
     font-size: 1.25em;
-  }
+  } */
+
+
+  body {
+  background-color: #f2f2f2;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+}
 
 .main-container {
     height: 600px;
@@ -15,6 +25,21 @@ body {
     flex-wrap: nowrap;
     justify-content: center; 
     align-items: center; 
+}
+
+select {
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 30px;
+  background-color: white;
+}
+
+h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  color: #333;
 }
 
 .buttom-container {
@@ -43,8 +68,26 @@ circle {
     fill: #9ACBD0;
 }
 
+.button-container {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 button {
-    margin: 10px;
+  margin: 10px;
+  padding: 10px 15px;
+  border-radius: 5px;
+  background-color: steelblue;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #1b66c9;
 }
 
 .tooltip {

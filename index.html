@@ -3,29 +3,31 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Carregamento dos Dados</title>
+    <title>Análise de Jogos Steam</title>
     <link rel="stylesheet" href="index.css">
 </head>
 
 <body>
     <div class="main-container">
-        <h1>Taxi</h1>
+        <h1>Análise de Jogos Steam</h1>
         <select name="question-selector" id="question-select">
-            <option value="1" selected>Questão 1</option>
-            <option value="2">Questão 2</option>
+            <option value="1" selected>Longevidade</option>
+            <option value="2">Popularidade</option>
+            <option value="3">Singleplayer x Multiplayer</option>
         </select>
         <svg>
         </svg>
         <div class="buttom-container">
             <div class="question-1-button-container">
-                <button id="distanceBtn">Distância</button>
-                <button id="pickupHourBtn">Hora da corrida</button>
-                <button id="totalAmountBtn">Valor da corrida</button>
-                <button id="AvgRaceDuration">Duração Média da Corrida</button>
+                <!-- ADICIONAR BOTÔES DA LONGEVIDADE -->
             </div>
             <div class="question-2-button-container" >
-                <button id="sumBtn">Total</button>
-                <button id="avgBtn">Média</button>
+                <button id="criticBtn">Crítica x Tempo jogado</button>
+                <button id="priceBtn">Preço x Compradores</button>
+                <button id="top10Btn">Top 10 populares</button>
+            </div>
+            <div class="question-3-button-container" >
+                <!-- ADICIONAR BOTÔES DA SINGLEPLAYER X MULTIPLAYER -->
             </div>
             <button id="clearBtn">Limpar</button>
         </div>
