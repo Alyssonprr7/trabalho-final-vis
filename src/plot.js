@@ -1117,6 +1117,32 @@ const plotGroupedBarChart = (
     .on('mouseout', function () {
       d3.select('#tooltip').style('display', 'none');
     });
+
+    // ---- Legenda
+const legendData = [
+  { label: 'Single Player', color: 'steelblue' },
+  { label: 'Multiplayer', color: 'seagreen' }
+];
+
+const legend = svg.selectAll('#legendGroupedBars').data([0]).join('g')
+  .attr('id', 'legendGroupedBars')
+  .attr('transform', `translate(${svgWidth + margens.left - 300}, ${margens.top - 30})`);
+
+legend.selectAll('rect')
+  .data(legendData)
+  .join('rect')
+  .attr('x', (d, i) => i * 180)
+  .attr('width', 18)
+  .attr('height', 18)
+  .attr('fill', d => d.color);
+
+legend.selectAll('text')
+  .data(legendData)
+  .join('text')
+  .attr('x', (d, i) => i * 180 + 24)
+  .attr('y', 14)
+  .style('font-size', '1.2em')
+  .text(d => d.label);
 };
 
 const plotPieChart = (data, margens = { left: 50, right: 50, top: 50, bottom: 50 }) => {
