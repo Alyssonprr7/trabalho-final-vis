@@ -60,14 +60,69 @@ export async function loadCriticRentationLineChart(data, margens = { left: 90, r
     plotLineChart(treatedData, margens, {x: 'Faixa de Avaliação', y: 'Média de Horas Jogadas' });
 }
 
+export async function loadChartPlaytimeByMode(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
+    const treatedData = data.map(d => ({
+        x: d.mode,
+        y: Number(d.avg_playtime_hours)
+    }));
+
+    plotBarChart(treatedData, margens, {
+        x: '',
+        y: 'Tempo médio de jogo (h)'
+    }, 'seagreen');
+}
+
+export async function loadChartPriceRangeByMode(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
+  console.log("Dados tratados para faixa de preço:", data);
+
+  const treatedData = data.map(d => {
+  const group = d.price_range;
+  const category = d.mode;
+  const value = Number(d.quantidade);
+
+  if (isNaN(value)) {
+    console.warn(`Valor inválido para ${group} - ${category}:`, d.quantidade);
+  }
+
+  value: isNaN(Number(d.quantidade)) ? 0 : Number(d.quantidade)
+
+  return { group, category, value };
+}).filter(d => !isNaN(d.value));
+
+  plotGroupedBarChart(treatedData, margens, {
+    x: 'Faixa de preço',
+    y: 'Quantidade de jogos'
+  }, { 'Single Player': 'steelblue', 'Multiplayer': 'seagreen' });
+}
+
+export async function loadChartRatingByMode(data, margens = { left: 50, right: 50, top: 50, bottom: 50 }) {
+  console.log("Dados tratados para feedback por modo:", data);
+
+  const treatedData = [];
+
+  data.forEach(d => {
+    const mode = d.mode;
+    const positives = Number(d.total_positives);
+    const negatives = Number(d.total_negatives);
+
+    if (isNaN(positives + negatives) || positives + negatives === 0) {
+      console.warn(`Modo ${mode} ignorado por falta de avaliações ou valores inválidos.`);
+      return;
+    }
+
+    treatedData.push({ mode, type: "Positive", value: positives });
+    treatedData.push({ mode, type: "Negative", value: negatives });
+  });
+
+  plotPieChart(treatedData, margens);
+}
+
+
 const treatOwners = (owners) => {
     const inferior = owners.split('-')[0];
     const superior = owners.split('-')[1];
     return (Number(superior) - Number(inferior))/2;
 }
-
-
-
 
 const plotBarChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 75 }, labels, barColor) => {
     const svg = d3.select('svg');
@@ -102,7 +157,7 @@ const plotBarChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 75
         .call(xAxis)
         .append("text") // Label
         .attr("x", svgWidth / 2)
-        .attr("y", 60)
+        .attr("y", 50)
         .style("text-anchor", "middle")
         .style("fill", "black")
         .style("font-size", "1.5em")
@@ -463,8 +518,6 @@ points.enter()
 
     points.exit().remove();
 };
-
-
 
 const plotHorizontalBarChart = (data, margens = { left: 120, right: 50, top: 50, bottom: 50 }, getGamesByPriceRange) => {
   const svg = d3.select('svg');
@@ -978,8 +1031,196 @@ const plotBubbleChart = (
   bubbles.exit().remove();
 };
 
+const plotGroupedBarChart = (
+  data, 
+  margens = { left: 75, right: 50, top: 50, bottom: 75 },
+  labels = { x: 'Faixa de preço', y: 'Quantidade de jogos' },
+  colors = { 'Single Player': 'steelblue', 'Multiplayer': 'seagreen' }
+) => {
+  const svg = d3.select('svg');
+  if (!svg.node()) return;
+
+  const svgWidth = +svg.style("width").replace("px", "") - margens.left - margens.right;
+  const svgHeight = +svg.style("height").replace("px", "") - margens.top - margens.bottom;
+
+  const groups = Array.from(new Set(data.map(d => d.group)));
+  const categories = Array.from(new Set(data.map(d => d.category)));
+  console.log("Groups:", groups);
+  console.log("Categories:", categories);
+
+  const mapX0 = d3.scaleBand()
+    .domain(groups)
+    .range([0, svgWidth])
+    .padding(0.2);
+
+  const mapX1 = d3.scaleBand()
+    .domain(categories)
+    .range([0, mapX0.bandwidth()])
+    .padding(0.05);
+
+  const maxValue = d3.max(data, d => d.value);
+  const mapY = d3.scaleLinear()
+    .domain([0, maxValue])
+    .range([svgHeight, 0]);
+
+  svg.selectAll('#axisX').data([0]).join('g')
+    .attr('id', 'axisX')
+    .attr('transform', `translate(${margens.left}, ${svgHeight + margens.top})`)
+    .call(d3.axisBottom(mapX0))
+    .selectAll("text")
+    .attr("transform", "rotate(-30)")
+    .style("text-anchor", "end")
+    .style("font-size", "1.3em");
+
+  svg.selectAll('#axisY').data([0]).join('g')
+    .attr('id', 'axisY')
+    .attr('transform', `translate(${margens.left}, ${margens.top})`)
+    .call(d3.axisLeft(mapY))
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -svgHeight / 2)
+    .attr("y", -70)
+    .attr("dy", "1em")
+    .style("text-anchor", "middle")
+    .style("font-size", "1.5em")
+    .style("fill", "black")
+    .text(labels.y);
+
+  const group = svg.selectAll('#groupGroupedBars').data([0]).join('g')
+    .attr('id', 'groupGroupedBars')
+    .attr('transform', `translate(${margens.left}, ${margens.top})`);
+
+  const grouped = group.selectAll('g').data(groups).join('g')
+    .attr('transform', d => `translate(${mapX0(d)}, 0)`);
+
+  grouped.selectAll('rect').data(d =>
+    categories.map(cat => {
+      const entry = data.find(e => e.group === d && e.category === cat);
+      return { category: cat, value: entry ? entry.value : 0 };
+    })
+  ).join('rect')
+    .attr('x', d => mapX1(d.category))
+    .attr('y', d => mapY(d.value))
+    .attr('width', mapX1.bandwidth())
+    .attr('height', d => svgHeight - mapY(d.value))
+    .attr('fill', d => colors[d.category] || 'gray')
+    .on('mouseover', function (event, d) {
+      d3.select('#tooltip')
+        .style('display', 'block')
+        .html(`${d.category}<br>Quantidade: ${d.value}`);
+    })
+    .on('mousemove', function (event) {
+      d3.select('#tooltip')
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY - 28) + 'px');
+    })
+    .on('mouseout', function () {
+      d3.select('#tooltip').style('display', 'none');
+    });
+};
+
+const plotPieChart = (data, margens = { left: 50, right: 50, top: 50, bottom: 50 }) => {
+  const svg = d3.select('svg');
+  if (!svg.node()) return;
+
+  svg.selectAll('*').remove(); // limpa qualquer gráfico anterior
+
+  const width = +svg.style("width").replace("px", "") - margens.left - margens.right;
+  const height = +svg.style("height").replace("px", "") - margens.top - margens.bottom;
+  const radius = Math.min(width, height) / 2;
+
+  const color = d3.scaleOrdinal()
+    .domain(["Positive", "Negative"])
+    .range(["seagreen", "crimson"]);
+
+  const pieGenerator = d3.pie()
+    .value(d => d.value)
+    .sort(null);
+
+  const arcGenerator = d3.arc()
+    .innerRadius(0)
+    .outerRadius(radius);
+
+  const modes = Array.from(new Set(data.map(d => d.mode)));
+
+  modes.forEach((mode, i) => {
+    const subset = data.filter(d => d.mode === mode);
+    const pieData = pieGenerator(subset);
+    const centerX = margens.left + (i + 1) * (width / (modes.length + 1));
+    const centerY = margens.top + height / 2;
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${centerX}, ${centerY})`);
+
+    g.selectAll('path')
+      .data(pieData)
+      .join('path')
+      .attr('d', arcGenerator)
+      .attr('fill', d => color(d.data.type))
+      .attr('stroke', 'white')
+      .style('stroke-width', '2px')
+      .on('mouseover', (event, d) => {
+        d3.select('#tooltip')
+          .style('display', 'block')
+          .html(`${mode} – ${d.data.type}: ${d.data.value}`);
+      })
+      .on('mousemove', event => {
+        d3.select('#tooltip')
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mouseout', () => {
+        d3.select('#tooltip').style('display', 'none');
+      });
+
+    g.selectAll('text')
+      .data(pieData)
+      .join('text')
+      .attr('transform', d => `translate(${arcGenerator.centroid(d)})`)
+      .style('text-anchor', 'middle')
+      .style('font-size', '12px')
+      .style('fill', 'white')
+      .text(d => Math.round(100 * d.data.value / d3.sum(subset, s => s.value)) + '%');
+
+    g.append('text')
+      .attr('y', radius + 20)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '14px')
+      .style('font-weight', 'bold')
+      .text(mode);
+
+      // Legenda
+  const legendData = [
+    { label: "Avaliações positivas", color: "seagreen" },
+    { label: "Avaliações negativas", color: "crimson" }
+  ];
+
+  const legendGroup = svg.selectAll('#legend').data([0]).join('g')
+    .attr('id', 'legend')
+    .attr('transform', `translate(${margens.left}, ${margens.top})`);
+
+  legendGroup.selectAll('rect')
+    .data(legendData)
+    .join('rect')
+    .attr('x', 0)
+    .attr('y', (d, i) => i * 25)
+    .attr('width', 18)
+    .attr('height', 18)
+    .attr('fill', d => d.color);
+
+  legendGroup.selectAll('text')
+    .data(legendData)
+    .join('text')
+    .attr('x', 25)
+    .attr('y', (d, i) => i * 25 + 14)
+    .style('font-size', '1.2em')
+    .text(d => d.label);
+  });
+}
 
 export function clearChart() {
+    d3.select('svg').selectAll('*').remove();
+
     // Limpar gráfico de barras simples
     d3.select('#group')
         .selectAll('*')

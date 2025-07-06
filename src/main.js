@@ -2,6 +2,7 @@ import { loadChartScatter, loadChartBubble, loadChartBar, clearChart } from './p
 import { Games } from "./games";
 import { getPopularity } from './services/popularityService';
 import { getLongevity } from './services/longevityService';
+import { getSingleVsMulti } from './services/singleVsMultiService';
 
 const hideButtons = async (selectedQuestion) => {
     const buttonContainerQuestion1 = document.querySelector('.question-1-button-container');
@@ -45,5 +46,6 @@ window.onload = async () => {
     await games.loadGames();
 
     await getPopularity(games);
-    await getLongevity(games)
+    await getLongevity(games);
+    await getSingleVsMulti(games);
 };
