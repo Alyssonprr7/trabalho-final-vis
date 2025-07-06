@@ -14,13 +14,13 @@ export async function loadChartBar(data, callBack) {
 
 export async function loadChartScatter(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
     const treatedData = data.map(d => ({ x: Number(d.metacritic_score), y: Number(d.average_playtime_forever), name: d.name }));
-    plotScatterPlot(treatedData, margens, {x: 'Avaliação', y: 'Tempo jogado (h)', name: "Nome"});
+    plotScatterPlot(treatedData, margens, {x: ' Avaliação da crítica especializada', y: 'Horas totais jogadas', name: "Nome"});
 }
 
 export async function loadChartBubble(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
     const treatedData = data.map(d => ({ x: treatOwners(d.estimated_owners), y: Number(d.price), r: Number(d.average_playtime_forever), name: d.name }));
     console.log(treatedData);
-    plotBubbleChart(treatedData, margens, {x: 'Quantidade de vendas', y: 'Média do preço ($)', r: "Tempo jogado (h)"});
+    plotBubbleChart(treatedData, margens, {x: 'Média de quantidade de vendas', y: 'Média do preço ($)', r: "Horas totais jogadas"});
 }
 
 export async function loadGenreRentationChart(data, games, margens = { left: 90, right: 90, top: 50, bottom: 150 }) {
