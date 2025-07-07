@@ -26,7 +26,7 @@ export async function loadChartBubble(data, margens = { left: 75, right: 50, top
 export async function loadGenreRentationChart(data, games, margens = { left: 90, right: 90, top: 50, bottom: 150 }) {
     const treatedData = data.map(d => ({ x: d.genre, yBar: Number(d.tempo_medio_jogado_horas), yLine: Number(d.tempo_medio_jogado_horas) }))
         .sort((a, b) => a.x.localeCompare(b.x)); // Ordenar alfabeticamente por gênero
-    plotBarChartWithLine(treatedData, margens, { x: 'Gênero', yLeft: 'Tempo médio jogado (horas)'}, 'steelblue', 'orange', async (genre) => {
+    plotBarChartWithLine(treatedData, margens, { x: 'Gênero', yLeft: 'Tempo médio jogado (horas)', yRight: 'Tempo médio jogado (horas)'}, 'steelblue', 'orange', async (genre) => {
         // Ao clicar na barra, buscar os jogos do gênero e mostrar o gráfico horizontal
         const gamesData = await getGamesByGenre(games, genre);
         plotGamesDetailChart(gamesData, genre);
@@ -57,7 +57,7 @@ export async function loadCriticRentationLineChart(data, margens = { left: 90, r
         y: Number(d.media_horas_jogadas),
         metacritic: Number(d.media_metacritic)
     }));
-    plotLineChart(treatedData, margens, {x: 'Faixa de Avaliação', y: 'Média de Horas Jogadas' });
+    plotLineChartWithDualAxis(treatedData, margens, {x: 'Faixa de Avaliação', y: 'Média de Horas Jogadas' });
 }
 
 export async function loadChartPlaytimeByMode(data, margens = { left: 75, right: 50, top: 50, bottom: 75 }) {
@@ -370,7 +370,7 @@ svg.selectAll('#axisYRight').data([0])
         .style('display', 'block')
         .html(`
           ${labels.x}: ${d.x}<br>
-          ${labels.yLeft}: ${d.yBar.toFixed(2)} horas
+          ${labels.yLeft}: ${d.yBar.toFixed(2)}
         `);
     })
     .on('mousemove', function (event) {
@@ -382,29 +382,7 @@ svg.selectAll('#axisYRight').data([0])
       d3.select(this).attr('stroke', null);
       d3.select('#tooltip').style('display', 'none');
     });
-
-  // bars.exit().remove();
-
-  // Labels no topo das barras
-  const barLabels = group.selectAll('.bar-label').data(data);
-
-  barLabels.enter()
-    .append('text')
-    .attr('class', 'bar-label')
-    .attr('x', d => mapX(d.x) + mapX.bandwidth() / 2)
-    .attr('y', d => scaleYBar(d.yBar) - 5)
-    .attr('text-anchor', 'middle')
-    .style('font-size', '0.9em')
-    .style('font-weight', 'bold')
-    .style('fill', '#2C3E50')
-    .text(d => `${d.yBar.toFixed(1)}h`);
-
-  barLabels
-    .attr('x', d => mapX(d.x) + mapX.bandwidth() / 2)
-    .attr('y', d => scaleYBar(d.yBar) - 5)
-    .text(d => `${d.yBar.toFixed(1)}h`);
-
-  // barLabels.exit().remove();
+    
 
   // Linha
   const line = d3.line()
@@ -787,7 +765,7 @@ const plotGamesDetailChart = (data, faixaPreco, margens = { left: 150, right: 50
   // labels.exit().remove();
 };
 
-const plotLineChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 75 }, labels, lineColor = "steelblue") => {
+const plotLineChartWithDualAxis = (data, margens = { left: 75, right: 75, top: 50, bottom: 75 }, labels, lineColor = "steelblue") => {
     const svg = d3.select('svg');
     if (!svg.node()) return;
 
@@ -801,11 +779,12 @@ const plotLineChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 7
         .padding(0.1);
 
     const yExtent = d3.extent(data, d => d.y);
+    
     const mapY = d3.scaleLinear()
         .domain([0, yExtent[1]])
         .range([svgHeight, 0]);
 
-    // Eixos
+    // Eixo X
     const xAxis = d3.axisBottom(mapX);
     const groupX = svg.selectAll('#axisX').data([0]);
 
@@ -827,12 +806,13 @@ const plotLineChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 7
     svg.append('text')
         .attr("id", "xAxisLabel")
         .attr("x", margens.left + svgWidth / 2)
-        .attr("y", svgHeight + margens.top + 115) // Posição abaixo dos valores
+        .attr("y", svgHeight + margens.top + 115)
         .style("text-anchor", "middle")
         .style("fill", "black")
         .style("font-size", "1.2em")
         .text("Avaliação da Crítica");
 
+    // Eixo Y da esquerda (horas jogadas)
     const yAxis = d3.axisLeft(mapY);
     const groupY = svg.selectAll('#axisY').data([0]);
 
@@ -872,7 +852,7 @@ const plotLineChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 7
         .attr('id', 'groupLine')
         .attr('transform', `translate(${margens.left}, ${margens.top})`);
 
-    // Função para gerar a linha
+    // Função para gerar a linha (horas jogadas)
     const line = d3.line()
         .x(d => mapX(d.x) + mapX.bandwidth() / 2)
         .y(d => mapY(d.y))
@@ -922,9 +902,7 @@ const plotLineChart = (data, margens = { left: 75, right: 50, top: 50, bottom: 7
     points
         .attr('cx', d => mapX(d.x) + mapX.bandwidth() / 2)
         .attr('cy', d => mapY(d.y));
-
-    // points.exit().remove();
-};
+}
 
 const plotBubbleChart = (
   data,
@@ -1255,6 +1233,10 @@ export function clearChart() {
     // Limpar gráfico de barras com linha
     d3.select('#groupCombined')
         .selectAll('*')
+        .remove();
+        
+    // Limpar labels das barras
+    d3.selectAll('.bar-label')
         .remove();
 
     // Limpar gráfico de bolhas
